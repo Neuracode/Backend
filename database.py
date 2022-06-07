@@ -1,13 +1,9 @@
-from os import getenv
-from dotenv import load_dotenv
+from config import DATABASE_URL
 from pymongo import MongoClient
 from umongo import Document, fields
 from umongo.frameworks import PyMongoInstance
 
-load_dotenv()
-
-MONGO_DB_URL = getenv('DATABASE_URL')
-client = MongoClient(MONGO_DB_URL)
+client = MongoClient(DATABASE_URL)
 
 db = client.main
 odm = PyMongoInstance(db) # ODM stands for Object Data Mapper (Equivalent to an ORM for a relational database)
@@ -20,7 +16,7 @@ class User(Document):
     timestamp = fields.DateTimeField(required=True,default_now=True)
     courses = fields.ListField(fields.ReferenceField('Course'))
     level = fields.IntField(default=1)
-    permissions = fields.ListField(fields.StringField())
+    permissions = fields.IntegerField(default=0)
     class Meta:
         collection_name = "users"
 User.ensure_indexes()
