@@ -1,8 +1,9 @@
+from datetime import datetime
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import db
-from schemas import Authorization, CredentialChanger, CredentialChanger, UserInfoLogin, UserInfoRegister
-from auth import InitializeUser, authenticateUser, checkAccessTokenForValidity, checkForUserWithExistingCredentials, createAccessToken, checkRefreshTokenForValidity, createRefreshToken, decodeToken, getUserByToken, hashPassword
+from schemas import Authorization, CreateCourseAuthorization, CredentialChanger, CredentialChangeAuthorization, UserInfoLogin, UserInfoRegister
+from auth import InitializeUser, authenticateUser, checkAccessTokenForValidity, checkForUserWithExistingCredentials, createAccessToken, checkRefreshTokenForValidity, createRefreshToken, decodeToken, getUserByToken, hashPassword, initializeCourse
 import uvicorn
 
 app = FastAPI()
@@ -34,7 +35,7 @@ async def getToken(refreshToken: str):
 async def getAllUsers(data: Authorization):
     payload = checkAccessTokenForValidity(data.token) 
     if payload is not False:
-        if payload['permissions'] == 2:
+        if payload['permissions'] == 2: #This means the user is an admin | I will do a more moderate version for the lecturers in my next commit probably
             userarray = []
             users = db.users.find()
             for user in users:
@@ -44,7 +45,7 @@ async def getAllUsers(data: Authorization):
     return{"code":401, "message":"Invalid access token"}
 
 @app.put('/users/update/{parameter}/{_id}')
-async def updateUser(data:CredentialChanger):
+async def updateUser(data:CredentialChangeAuthorization):
     user = getUserByToken(data.token)
     if user is not False:
         db.users.update_one({"_id":user["_id"]},{"$set":{data.parameter:data.newParameter}})
@@ -72,6 +73,17 @@ async def loginUser(data:UserInfoLogin):
             return {'code':200,'message':'User logged in.','access_token':token,'refresh_token':refreshToken}
         return{'code':500,'message':'User not logged in due to internal error.'}
     return {'code':401,'message':'Invalid credentials.'}
+
+@app.post('/courses/create/{courseName}')
+async def createCourse(data:CreateCourseAuthorization):
+    user = decodeToken(data.token)
+    if user is not False and not user['exp'] < datetime.utcnow():
+        if user['permissions'] == 1:
+            courseIsCreated = initializeCourse(data.courseName,data.courseDescription,data.courseTags,data.lecturer,data.lectureHours,data.courseLength,data.courseStart,data.courseEnd)
+            if courseIsCreated is not False:
+                return{'code':200,'message':'Course created.'}
+        return {'code':401,'message':'You do not have permission to access this resource.'}
+    return {'code':401,'message':'Invalid access token.'}
 
 if __name__ == '__main__':
     uvicorn.run(app, host='localhost',port=8000,flag='debug')

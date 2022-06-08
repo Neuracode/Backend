@@ -67,3 +67,11 @@ def hashPassword(password:str):
 
 def verifyPassword(password:str, hashedPassword:str):
     return hasher.verify(password, hashedPassword)
+
+def initializeCourse(name:str, description:str, tags:list, lecturer:list, lectureHours:list, courseLength:str, courseStart:str, courseEnd:str, token:str):
+    course = {'name':name,'description':description,'tags':tags,'lecturer':lecturer,'lectureHours':lectureHours,'courseLength':courseLength,'courseStart':courseStart,'courseEnd':courseEnd,'timestamp':datetime.utcnow()}
+    try:
+        db.courses.insert_one(course)
+        return True
+    except:
+        return False
