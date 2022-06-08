@@ -75,3 +75,13 @@ def initializeCourse(name:str, description:str, tags:list, lecturer:list, lectur
         return True
     except:
         return False
+
+def updateCourseParameter(name:str, parameter:str, newValueOfParameter:str):
+    course = db.courses.find_one({'name': name})
+    if course:
+        try:
+            db.courses.update_one({'name': name}, {'$set': {parameter: newValueOfParameter}})
+            return True
+        except:
+            return False
+    return False

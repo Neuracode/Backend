@@ -2,8 +2,8 @@ from datetime import datetime
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import db
-from schemas import Authorization, CreateCourseAuthorization, CredentialChanger, CredentialChangeAuthorization, UserInfoLogin, UserInfoRegister
-from auth import InitializeUser, authenticateUser, checkAccessTokenForValidity, checkForUserWithExistingCredentials, createAccessToken, checkRefreshTokenForValidity, createRefreshToken, decodeToken, getUserByToken, hashPassword, initializeCourse
+from schemas import Authorization, CreateCourseAuthorization, CredentialChanger, CredentialChangeAuthorization, UpdateCourseAuthorization, UserInfoLogin, UserInfoRegister
+from auth import InitializeUser, authenticateUser, checkAccessTokenForValidity, checkForUserWithExistingCredentials, createAccessToken, checkRefreshTokenForValidity, createRefreshToken, decodeToken, getUserByToken, hashPassword, initializeCourse, updateCourseParameter
 import uvicorn
 
 app = FastAPI()
@@ -44,7 +44,7 @@ async def getAllUsers(data: Authorization):
         return {"code": 401, "message": "You do not have permission to access this resource"}
     return{"code":401, "message":"Invalid access token"}
 
-@app.put('/users/update/{parameter}/{_id}')
+@app.put('/users/update/{_id}/{parameter}')
 async def updateUser(data:CredentialChangeAuthorization):
     user = getUserByToken(data.token)
     if user is not False:
@@ -80,8 +80,20 @@ async def createCourse(data:CreateCourseAuthorization):
     if user is not False and not user['exp'] < datetime.utcnow():
         if user['permissions'] == 1:
             courseIsCreated = initializeCourse(data.courseName,data.courseDescription,data.courseTags,data.lecturer,data.lectureHours,data.courseLength,data.courseStart,data.courseEnd)
-            if courseIsCreated is not False:
+            if courseIsCreated:
                 return{'code':200,'message':'Course created.'}
+        return {'code':401,'message':'You do not have permission to access this resource.'}
+    return {'code':401,'message':'Invalid access token.'}
+
+@app.put('/courses/update/{courseName}/{parameter}')
+async def updateCourse(data:UpdateCourseAuthorization):
+    user = decodeToken(data.token)
+    if user is not False and not user['exp'] < datetime.utcnow():
+        if user['permissions'] == 1:
+            courseIsUpdated = updateCourseParameter(data.courseName,data.parameter,data.newParameter)
+            if courseIsUpdated:
+                return {'code':200,'message':'Course updated.'}
+            return {'code':500,'message':'Course not updated due to internal error.'}
         return {'code':401,'message':'You do not have permission to access this resource.'}
     return {'code':401,'message':'Invalid access token.'}
 
