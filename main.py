@@ -63,7 +63,6 @@ async def updateUser(data:CredentialChangeAuthorization):
         return {'code':200,'message':f'User\'s {data.parameter} updated to {data.newParameter}.'}
     return {'code':500,'message':'User not updated due to internal error.'}
 
-
 # --- Admin features --- #
 
     # --- Get user info --- #
@@ -117,12 +116,22 @@ async def getAllUsersInCourse(data:CourseAuthorization):
     if isAdmin(user):
         course = db.courses.find_one({'name':data.courseName})
         if course is not None:
-            return {'code': 200, 'courseStudents': course['participants']} #return users here
+            return {'code': 200, 'courseStudents': course['participants']}
         return {'code': 500, 'message': 'Course not found.'}
     return { 'code': 401, 'message': 'You do not have permission to access this resource.'}
+
+# --- Basic info fetching --- #
 
 @app.get('/courses/all/get')
 async def getAllCourses():
     return { 'code': 200, 'courses': getCoursesList()}
+
+# ---  User queries --- #
+
+app.post('/users/{name}/courses/get')
+async def getUserCourses(data:CourseAuthorization):
+    user = getUserByToken(data.token)
+    return { 'code': 200, 'courses': getUserCourses(user['name'])}
+
 if __name__ == '__main__':
     uvicorn.run(app, host='localhost',port=8000,flag='debug')

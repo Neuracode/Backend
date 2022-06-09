@@ -82,6 +82,10 @@ def getCoursesList():
     courses = db.courses.find()
     return courses
 
+def getUserCourses(user:dict):
+    courses = db.courses.find({'participants': { "$in" : user}})
+    return courses
+
 def updateCourseParameter(name:str, parameter:str, newValueOfParameter:str):
     course = db.courses.find_one({'name': name})
     if course:
