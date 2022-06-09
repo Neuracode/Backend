@@ -24,14 +24,14 @@ class CreateCourseAuthorization(BaseModel):
     courseStart: Optional[str] = ""
     courseEnd: Optional[str] = ""
     
-class UpdateCourseAuthorization(BaseModel):
+class CourseAuthorization(BaseModel):
     token: str
     courseName: str
     parameter: str
     newValueOfParameter: str
     
 class CredentialChangeAuthorization(BaseModel):
-    _id: int
+    name: str
     parameter: str
     newValueOfParameter: str
     token: str

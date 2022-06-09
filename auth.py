@@ -18,6 +18,13 @@ def createRefreshToken(user:dict):
     RefreshToken = jwt.encode({'_id':user['_id'], 'exp':datetime.utcnow() + timedelta(days=30)}, JWT_SECRET, algorithm='HS256')
     return RefreshToken
 
+def NameAndEmailAreFree(name:str, email:str):
+    userExistsName = db.users.find({'name': name})
+    userExistsEmail = db.users.find({'email': email})
+    if userExistsName.count() > 0 or userExistsEmail.count() > 0:
+        return False
+    return True
+
 def checkTokenForValidity(token:str):
     data = decodeToken(token)
     if data['exp'] > datetime.utcnow():
@@ -70,6 +77,10 @@ def initializeCourse(name:str, description:str, tags:list, lecturer:list, lectur
         return True
     except:
         return False
+
+def getCoursesList():
+    courses = db.courses.find()
+    return courses
 
 def updateCourseParameter(name:str, parameter:str, newValueOfParameter:str):
     course = db.courses.find_one({'name': name})
