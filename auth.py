@@ -18,26 +18,21 @@ def createRefreshToken(user:dict):
     RefreshToken = jwt.encode({'_id':user['_id'], 'exp':datetime.utcnow() + timedelta(days=30)}, JWT_SECRET, algorithm='HS256')
     return RefreshToken
 
-def checkAccessTokenForValidity(token:str):
+def checkTokenForValidity(token:str):
     data = decodeToken(token)
-    if data is not False:
+    if data['exp'] > datetime.utcnow():
         return data
     return False
 
-def checkRefreshTokenForValidity(data:str):
-    if data['exp'] < datetime.utcnow():
-        return False
-    return True
-
 def getUserByToken(token:str):
-    user = decodeToken(token)
-    if user is not False:
+    decodedToken = decodeToken(token)
+    if decodedToken is not False:
         user = db.users.find_one({'name': user['name']})
         if user:
             return user
     return False
 
-def checkForUserWithExistingCredentials(name:str,email:str):
+def tokenIsValid(name:str,email:str):
     foundUsers = db.users.find({'name': name, 'email': email})
     foundArray = []
     for foundUser in foundUsers:
@@ -84,4 +79,25 @@ def updateCourseParameter(name:str, parameter:str, newValueOfParameter:str):
             return True
         except:
             return False
+    return False
+
+def deleteExcitingCourse(name:str):
+    courseIsDeleted = db.courses.delete_one({'name': name})
+    if courseIsDeleted.deleted_count == 1:
+        return True
+    return False
+
+def isStudent(user:dict):
+    if user['permissions'] == 0:
+        return True
+    return False
+
+def isLecturer(user:dict):
+    if user['permissions'] == 1:
+        return True
+    return False
+
+def isAdmin(user:dict):
+    if user['permissions'] == 2:
+        return True
     return False
