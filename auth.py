@@ -70,7 +70,7 @@ def hashPassword(password:str):
 def verifyPassword(password:str, hashedPassword:str):
     return hasher.verify(password, hashedPassword)
 
-def initializeCourse(name:str, description:str, tags:list, lecturer:list, lectureHours:list, courseLength:str, courseStart:str, courseEnd:str, token:str):
+def initializeCourse(name:str, description:str, tags:list, lecturer:list, lectureHours:list, courseLength:str, courseStart:str, courseEnd:str):
     course = {'name':name,'description':description,'tags':tags,'lecturer':lecturer,'lectureHours':lectureHours,'courseLength':courseLength,'courseStart':courseStart,'courseEnd':courseEnd,'timestamp':datetime.utcnow()}
     try:
         db.courses.insert_one(course)
@@ -102,6 +102,34 @@ def deleteExcitingCourse(name:str):
         return True
     return False
 
+def appendVolunteerTask(title:str, description:str, fulfiller:any, length:int):
+    try:
+        db.tasks.insert_one({'title':title,'description':description,'fulfiller':fulfiller,'length':length,'timestamp':datetime.utcnow(),'approved':False})
+        return True
+    except:
+        return False
+
+def approveVolunteeringTask(_id:str):
+    try:
+        db.tasks.update_one({'_id': _id}, {'$set': {'approved': True}})
+        return True
+    except:
+        return False
+
+def disapproveVolunteeringTask(_id:str):
+    try:
+        db.tasks.delete_one({'_id': _id})
+        return True
+    except:
+        return False
+    
+def fetchWaitingTasks():
+    try:
+        tasks = db.tasks.find({'approved': False})
+        return tasks
+    except:
+        return False
+        
 def isStudent(user:dict):
     if user['permissions'] == 0:
         return True

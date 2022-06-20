@@ -35,3 +35,14 @@ class CredentialChangeAuthorization(BaseModel):
     parameter: str
     newValueOfParameter: str
     token: str
+
+class VolunteeringHoursAppend(BaseModel):
+    token: str
+    title: str
+    description: str
+    hours: int
+    
+class VolunteeringAuthorization(BaseModel):
+    token: str
+    taksId: str
+    decision: bool

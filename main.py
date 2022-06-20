@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import db
-from schemas import Authorization, CourseAuthorization, CreateCourseAuthorization, CredentialChangeAuthorization, CourseAuthorization, UserInfoLogin, UserInfoRegister
-from auth import InitializeUser, NameAndEmailAreFree, authenticateUser, checkTokenForValidity, createAccessToken, createRefreshToken, deleteExcitingCourse, getCoursesList, getUserByToken, initializeCourse, isAdmin, isLecturer, tokenIsValid, updateCourseParameter
+from schemas import Authorization, CourseAuthorization, CreateCourseAuthorization, CredentialChangeAuthorization, CourseAuthorization, UserInfoLogin, UserInfoRegister, VolunteeringAuthorization, VolunteeringHoursAppend
+from auth import InitializeUser, NameAndEmailAreFree, appendVolunteerTask, approveVolunteeringTask, authenticateUser, checkTokenForValidity, createAccessToken, createRefreshToken, deleteExcitingCourse, disapproveVolunteeringTask, fetchWaitingTasks, getCoursesList, getUserByToken, initializeCourse, isAdmin, isLecturer, tokenIsValid, updateCourseParameter
 import uvicorn
 
 app = FastAPI()
@@ -120,6 +120,17 @@ async def getAllUsersInCourse(data:CourseAuthorization):
         return {'code': 500, 'message': 'Course not found.'}
     return { 'code': 401, 'message': 'You do not have permission to access this resource.'}
 
+    # --- Yet to be approved tasks fetch --- #
+@app.post('/tasks/get/waiting')
+async def getWaitingTasks(data:Authorization):
+    user = getUserByToken(data.token)
+    if user and isAdmin(user):
+        tasks = fetchWaitingTasks()
+        if tasks is not False:
+            return {'code':200,'tasks':tasks}
+        return {'code':500,'message':'Tasks not fetched due to internal error.'}
+    return {'code':401,'message':'You do not have permission to access this resource.'}
+
 # --- Basic info fetching --- #
 
 @app.get('/courses/all/get')
@@ -128,10 +139,29 @@ async def getAllCourses():
 
 # ---  User queries --- #
 
-app.post('/users/{name}/courses/get')
+@app.post('/users/{name}/courses/get')
 async def getUserCourses(data:CourseAuthorization):
     user = getUserByToken(data.token)
-    return { 'code': 200, 'courses': getUserCourses(user['name'])}
+    if user:
+        return { 'code': 200, 'courses': getUserCourses(user['name'])}
+    return { 'code': 401, 'message': 'Invalid access token.'}
+
+@app.put('/users/{name}/volunteering/add')
+async def addVolunteering(data:VolunteeringHoursAppend):
+    user = getUserByToken(data.token)
+    if appendVolunteerTask(data.title,data.description,user,data.length):
+        return {'code':200,'message':'Volunteering task added.'}
+    return { 'code': 401, 'message': 'Invalid access token.'}
+
+@app.put('/users/{name}/volunteering/decide')
+async def decideVolunteering(data:VolunteeringAuthorization):
+    user = getUserByToken(data.token)
+    if user and isAdmin(user):
+        if data.decision:
+            approveVolunteeringTask(data.taskId)
+            return {'code':200,'message':'Volunteering task approved.'}
+        disapproveVolunteeringTask(data.taskId)
+        return {'code':200,'message':'Volunteering task disapproved.'}
 
 if __name__ == '__main__':
     uvicorn.run(app, host='localhost',port=8000,flag='debug')
