@@ -111,7 +111,9 @@ def appendVolunteerTask(title:str, description:str, fulfiller:any, length:int):
 
 def approveVolunteeringTask(_id:str):
     try:
-        db.tasks.update_one({'_id': _id}, {'$set': {'approved': True}})
+        task = db.tasks.find_one_and_update({'_id': _id}, {'$set': {'approved': True}})
+        user = db.users.find_one({'_id': task['fulfiller']['name']})
+        db.users.update_one({'_id': user['_id']}, {'$push':{'hoursDone': user['hoursDone'] + task['length']}})
         return True
     except:
         return False
